@@ -81,6 +81,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         this.ch = ch;
         this.readInterestOp = readInterestOp;
         try {
+            // 设置服务端的channel为非阻塞
+            // ch是子类中创建出来的JDK底层的channel
             ch.configureBlocking(false);
         } catch (IOException e) {
             try {

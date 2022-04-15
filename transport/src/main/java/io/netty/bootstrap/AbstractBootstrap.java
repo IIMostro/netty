@@ -105,7 +105,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
      * {@link Channel} implementation has no no-args constructor.
      */
+
     public B channel(Class<? extends C> channelClass) {
+        // 这个地方设置了Channel
         return channelFactory(new ReflectiveChannelFactory<C>(
                 ObjectUtil.checkNotNull(channelClass, "channelClass")
         ));
@@ -269,6 +271,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
+        // 这里就是创建了一个NioSocketChannel
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
@@ -304,10 +307,19 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
     }
 
+    /**
+     * 初始化和注册
+     * channelFactory就是channel这里设置的。
+     * @see this#channel(Class)
+     * @return channel
+     */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+            // 创建出一个NioSocketChannel
+            // 执行NioSocketChannel里面的初始化方法
             channel = channelFactory.newChannel();
+            // 初始化
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {

@@ -103,6 +103,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
      */
     public NioSocketChannel(Channel parent, SocketChannel socket) {
         super(parent, socket);
+        // 创建一个NioSocketChannelConfig配置类
         config = new NioSocketChannelConfig(this, socket.socket());
     }
 
