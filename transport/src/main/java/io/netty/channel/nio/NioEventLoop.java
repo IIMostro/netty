@@ -147,6 +147,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private static Queue<Runnable> newTaskQueue(
             EventLoopTaskQueueFactory queueFactory) {
         if (queueFactory == null) {
+            // 如果传进来的QueueFactory，则在这里创建MpscQueue
             return newTaskQueue0(DEFAULT_MAX_PENDING_TASKS);
         }
         return queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS);
@@ -454,6 +455,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         nextWakeupNanos.set(curDeadlineNanos);
                         try {
                             if (!hasTasks()) {
+                                // 轮训IO事件
                                 strategy = select(curDeadlineNanos);
                             }
                         } finally {
@@ -481,10 +483,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
+                            // 处理IO事件
                             processSelectedKeys();
                         }
                     } finally {
                         // Ensure we always run tasks.
+                        // 处理外部事物
                         ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {

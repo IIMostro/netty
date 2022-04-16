@@ -57,6 +57,8 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
      * @param args              arguments which will passed to each {@link #newChild(Executor, Object...)} call
      */
     protected MultithreadEventExecutorGroup(int nThreads, Executor executor, Object... args) {
+
+        // 设置一个线程选择器
         this(nThreads, executor, DefaultEventExecutorChooserFactory.INSTANCE, args);
     }
 
@@ -73,14 +75,18 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         checkPositive(nThreads, "nThreads");
 
         if (executor == null) {
+            // 这个线程模型是每次都会新建一个线程实体
+            // 并且每次创建出来的线程都是FastThreadLocalThread
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
 
         children = new EventExecutor[nThreads];
 
+        // 根据设置的线程数来创建线程
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
+                // 创建NioEventLoop
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -108,6 +114,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             }
         }
 
+        // 为线程分配选择器
         chooser = chooserFactory.newChooser(children);
 
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {

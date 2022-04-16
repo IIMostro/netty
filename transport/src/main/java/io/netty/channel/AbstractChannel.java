@@ -507,18 +507,23 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
+                // 注册channel到EventLoop
                 doRegister();
                 neverRegistered = false;
                 registered = true;
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
+
+                // 如果初始化AbstractBootstrap的时候添加了Handler,则在这里就会触发Handler的handlerAdded方法
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
+                // 触发channelRegistered方法
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
+                // 注册的时候不会触发下面的方法，注册的时候并没有激活
                 if (isActive()) {
                     if (firstRegistration) {
                         pipeline.fireChannelActive();

@@ -27,8 +27,9 @@ public class Server extends SimpleChannelInboundHandler<WebSocketFrame>{
     private static final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     public static void main(String[] args) throws InterruptedException {
-        EventLoopGroup bootstrapGroup = new NioEventLoopGroup();
-        EventLoopGroup workGroup = new NioEventLoopGroup();
+        // 默认创建Runtime.getRuntime().availableProcessors() * 2 这么多的线程数
+        EventLoopGroup bootstrapGroup = new NioEventLoopGroup(1);
+        EventLoopGroup workGroup = new NioEventLoopGroup(10);
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             final Server server = new Server();
@@ -36,7 +37,7 @@ public class Server extends SimpleChannelInboundHandler<WebSocketFrame>{
             serverBootstrap.channel(NioServerSocketChannel.class);
             serverBootstrap.localAddress("0.0.0.0", 8081);
             serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>(){
-                @Override
+                @Override 
                 protected void initChannel(SocketChannel ch) {
                     ChannelPipeline pipeline = ch.pipeline();
                     pipeline.addLast(new HttpServerCodec());
@@ -75,6 +76,11 @@ public class Server extends SimpleChannelInboundHandler<WebSocketFrame>{
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
         logger.info("连接断开:{}", ctx.channel().remoteAddress());
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
     }
 
     @Override

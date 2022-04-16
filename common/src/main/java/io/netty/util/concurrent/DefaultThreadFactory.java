@@ -61,6 +61,7 @@ public class DefaultThreadFactory implements ThreadFactory {
     }
 
     public DefaultThreadFactory(Class<?> poolType, boolean daemon, int priority) {
+        // 转换线程名称，将第一个字母小写
         this(toPoolName(poolType), daemon, priority);
     }
 
@@ -102,6 +103,7 @@ public class DefaultThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
+        // 这个地方创建的是一个FastThreadLocalThread
         Thread t = newThread(FastThreadLocalRunnable.wrap(r), prefix + nextId.incrementAndGet());
         try {
             if (t.isDaemon() != daemon) {
