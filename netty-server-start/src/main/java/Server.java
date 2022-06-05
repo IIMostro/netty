@@ -34,7 +34,9 @@ public class Server extends SimpleChannelInboundHandler<WebSocketFrame>{
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             final Server server = new Server();
             serverBootstrap.group(bootstrapGroup, workGroup);
+            // 设置了ChannelFactory的值，影响之后的创建channel的类型
             serverBootstrap.channel(NioServerSocketChannel.class);
+            serverBootstrap.handler(new ServerHandler());
             serverBootstrap.localAddress("0.0.0.0", 8081);
             serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>(){
                 @Override 

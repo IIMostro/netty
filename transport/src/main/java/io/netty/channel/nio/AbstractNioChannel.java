@@ -377,6 +377,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     @Override
     protected void doRegister() throws Exception {
         boolean selected = false;
+        // 自旋
         for (;;) {
             try {
                 // 注册一个JDK底层的channel到EventLoop,同时不关心任何事件， 并且将自身作为一个一个attr注册上去
@@ -413,6 +414,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         readPending = true;
 
         final int interestOps = selectionKey.interestOps();
+        // 判断interestOps是不是等于1，等于1的话是需要关注事件的。
         if ((interestOps & readInterestOp) == 0) {
             selectionKey.interestOps(interestOps | readInterestOp);
         }

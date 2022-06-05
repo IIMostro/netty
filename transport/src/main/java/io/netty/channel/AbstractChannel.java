@@ -479,6 +479,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             AbstractChannel.this.eventLoop = eventLoop;
 
             if (eventLoop.inEventLoop()) {
+                // 实际的注册
                 register0(promise);
             } else {
                 try {
@@ -516,6 +517,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // user may already fire events through the pipeline in the ChannelFutureListener.
 
                 // 如果初始化AbstractBootstrap的时候添加了Handler,则在这里就会触发Handler的handlerAdded方法
+                // 这里会打印ServerHandler added事件
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
@@ -566,6 +568,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             boolean wasActive = isActive();
             try {
+                // 绑定jdk底层的channel
                 doBind(localAddress);
             } catch (Throwable t) {
                 safeSetFailure(promise, t);
@@ -574,6 +577,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             if (!wasActive && isActive()) {
+                // 事件通知，channel active
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
