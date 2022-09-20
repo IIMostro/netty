@@ -32,10 +32,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
 
+    // Reactor线程组中的Reactor集合
     private final EventExecutor[] children;
     private final Set<EventExecutor> readonlyChildren;
     private final AtomicInteger terminatedChildren = new AtomicInteger();
     private final Promise<?> terminationFuture = new DefaultPromise(GlobalEventExecutor.INSTANCE);
+    // 选择器
     private final EventExecutorChooserFactory.EventExecutorChooser chooser;
 
     /**
@@ -77,6 +79,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         if (executor == null) {
             // 这个线程模型是每次都会新建一个线程实体
             // 并且每次创建出来的线程都是FastThreadLocalThread
+            // 负责启动Reactor线程进而 Reactor 才可以开始工作
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
 
@@ -86,7 +89,8 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
-                // 创建NioEventLoop
+                // 创建NioEventLoop，也就是创建Reactor
+                // 每一个Reactor包含了 thread , task queue, tail queue, selector
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -114,7 +118,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             }
         }
 
-        // 为线程分配选择器
+        // 为线程分配选择器, 新建选择器，启动的时候初始化
         chooser = chooserFactory.newChooser(children);
 
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {

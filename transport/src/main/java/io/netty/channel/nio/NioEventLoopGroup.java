@@ -68,6 +68,12 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         this(nThreads, threadFactory, SelectorProvider.provider());
     }
 
+    /**
+     * 构造函数
+     *
+     * @param nThreads Reactor线程大小
+     * @param executor 用于启动Reactor的线程
+     */
     public NioEventLoopGroup(int nThreads, Executor executor) {
         this(nThreads, executor, SelectorProvider.provider());
     }
@@ -86,13 +92,41 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         super(nThreads, threadFactory, selectorProvider, selectStrategyFactory, RejectedExecutionHandlers.reject());
     }
 
+    /**
+     * 构造
+     *
+     * @param nThreads Reactor线程大小
+     * @param executor 用于启动Reactor的线程
+     * @param selectorProvider Reactor 中的 IO 模型为IO多路复用模型， 就是select,poll,epoll
+     *                         对应于 JDK NIO 中的实现为java.nio.channels.Selector，
+     *                         每个 Reator 中都包含一个Selector，用于轮询注册在该 Reactor 上的所有Channel上的IO事件。
+     *                         SelectorProvider就是用来创建Selector的
+     */
     public NioEventLoopGroup(
             int nThreads, Executor executor, final SelectorProvider selectorProvider) {
+        // 线程选择器
         this(nThreads, executor, selectorProvider, DefaultSelectStrategyFactory.INSTANCE);
     }
 
+    /**
+     * 构造
+     *
+     * @param nThreads Reactor线程大小
+     * @param executor 用于启动Reactor的线程
+     * @param selectorProvider Reactor 中的 IO 模型为IO多路复用模型， 就是select,poll,epoll
+     *                         对应于 JDK NIO 中的实现为java.nio.channels.Selector，
+     *                         每个 Reator 中都包含一个Selector，用于轮询注册在该 Reactor 上的所有Channel上的IO事件。
+     *                         SelectorProvider就是用来创建Selector的
+     * @param selectStrategyFactory  Reactor 最重要的事情就是轮询注册其上的Channel上的IO就绪事件，
+     *                               这里的SelectStrategyFactory用于指定轮询策略，
+     *                               默认为DefaultSelectStrategyFactory.INSTANCE
+     */
     public NioEventLoopGroup(int nThreads, Executor executor, final SelectorProvider selectorProvider,
                              final SelectStrategyFactory selectStrategyFactory) {
+        // 注意这个地方第三个参数为可变参数args
+        // args[0] = selectorProvider
+        // args[1] = selectStrategyFactory
+        // args[2] = rejectedExecutionHandlers
         super(nThreads, executor, selectorProvider, selectStrategyFactory, RejectedExecutionHandlers.reject());
     }
 
@@ -141,7 +175,9 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
 
     @Override
     protected EventLoop newChild(Executor executor, Object... args) throws Exception {
+        // 任务队列的工厂
         EventLoopTaskQueueFactory queueFactory = args.length == 4 ? (EventLoopTaskQueueFactory) args[3] : null;
+        // 创建 NioEventLoop
         return new NioEventLoop(this, executor, (SelectorProvider) args[0],
             ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2], queueFactory);
     }

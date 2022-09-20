@@ -165,10 +165,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                                         boolean addTaskWakesUp, Queue<Runnable> taskQueue,
                                         RejectedExecutionHandler rejectedHandler) {
         super(parent);
+        // 向Reactor添加任务时，是否唤醒Selector停止轮询IO就绪事件，马上执行异步任务
         this.addTaskWakesUp = addTaskWakesUp;
+        // Reactor异步任务队列的大小
         this.maxPendingTasks = DEFAULT_MAX_PENDING_EXECUTOR_TASKS;
+        // 用于启动Reactor线程的executor -> ThreadPerTaskExecutor
         this.executor = ThreadExecutorMap.apply(executor, this);
+        // 任务队列
         this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");
+        // 拒绝策略
         this.rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
     }
 
@@ -373,6 +378,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean ranAtLeastOne = false;
 
         do {
+            // 1.合并定时任务到普通任务队列
             fetchedAll = fetchFromScheduledTaskQueue();
             if (runAllTasksFrom(taskQueue)) {
                 ranAtLeastOne = true;
@@ -420,6 +426,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @return {@code true} if at least one task was executed.
      */
     protected final boolean runAllTasksFrom(Queue<Runnable> taskQueue) {
+        // 获取一个任务
         Runnable task = pollTaskFrom(taskQueue);
         if (task == null) {
             return false;
@@ -812,6 +819,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         return isTerminated();
     }
 
+    /**
+     *
+     * 实现的 Executor的 execute接口
+     *
+     * @param task the runnable task
+     */
     @Override
     public void execute(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
@@ -831,6 +844,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         addTask(task);
         if (!inEventLoop) {
             // 否则的话启动线程
+            // 绑定执行任务的线程为当前线程
+            /*
+                if thread != Thread.currentThread(){
+                    thread = Thread.currentThread();
+                }
+             */
             startThread();
             if (isShutdown()) {
                 boolean reject = false;
@@ -849,6 +868,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
 
+        // 唤醒当前的reactor
         if (!addTaskWakesUp && immediate) {
             wakeup(inEventLoop);
         }
@@ -981,6 +1001,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void doStartThread() {
         assert thread == null;
+        // 使用初始化的线程池来启动当前的reactor
         executor.execute(new Runnable() {
             @Override
             public void run() {

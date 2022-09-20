@@ -132,15 +132,30 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private int cancelledKeys;
     private boolean needsToSelectAgain;
 
+    /**
+     * 初始化NioEventLoop
+     *
+     * @param parent group
+     * @param executor 线程池
+     * @param selectorProvider selector工厂
+     * @param strategy 选择策略
+     * @param rejectedExecutionHandler 拒绝策略
+     * @param queueFactory 任务队列工厂
+     */
     NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
                  SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory queueFactory) {
+        // 注意这个地方的 newTaskQueue
+        // 创建task queue和tail queue
         super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
+        // 创建Reactor的selector
         final SelectorTuple selectorTuple = openSelector();
+        // 优化之后的selector
         this.selector = selectorTuple.selector;
+        // jdk默认的selector
         this.unwrappedSelector = selectorTuple.unwrappedSelector;
     }
 
@@ -162,6 +177,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             this.selector = unwrappedSelector;
         }
 
+        /**
+         * 初始化
+         *
+         * @param unwrappedSelector jdk默认
+         * @param selector 优化之后的selector
+         */
         SelectorTuple(Selector unwrappedSelector, Selector selector) {
             this.unwrappedSelector = unwrappedSelector;
             this.selector = selector;
@@ -171,15 +192,23 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private SelectorTuple openSelector() {
         final Selector unwrappedSelector;
         try {
+            // 使用selector工厂来创建 selector
+            // linux 使用 epoll
+            // mac 使用 kqueue
             unwrappedSelector = provider.openSelector();
         } catch (IOException e) {
             throw new ChannelException("failed to open a new selector", e);
         }
 
+        // 如果禁用 selector优化, 则直接返回jdk默认的 selector
+        //
         if (DISABLE_KEY_SET_OPTIMIZATION) {
             return new SelectorTuple(unwrappedSelector);
         }
 
+        // 反射获取 jdk 的SelectorImpl
+        // 下面就是使用 SelectedSelectionKeySet 替换 SelectorImpl中的selectedKeys和publicSelectedKeys
+        // selectedKeys和publicSelectedKeys都是HashSet
         Object maybeSelectorImplClass = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
@@ -277,6 +306,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     private static Queue<Runnable> newTaskQueue0(int maxPendingTasks) {
         // This event loop never calls takeTask()
+        // 多生产者单消费者的队列
         return maxPendingTasks == Integer.MAX_VALUE ? PlatformDependent.<Runnable>newMpscQueue()
                 : PlatformDependent.<Runnable>newMpscQueue(maxPendingTasks);
     }
@@ -447,7 +477,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     case SelectStrategy.BUSY_WAIT:
                         // fall-through to SELECT since the busy-wait is not supported with NIO
 
-                    case SelectStrategy.SELECT:
+                    case SelectStrategy.SELECT: // select事件，轮训I/O事件
                         long curDeadlineNanos = nextScheduledTaskDeadlineNanos();
                         if (curDeadlineNanos == -1L) {
                             curDeadlineNanos = NONE; // nothing on the calendar
@@ -488,16 +518,18 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         }
                     } finally {
                         // Ensure we always run tasks.
-                        // 处理外部事物
+                        // 处理所有事件
                         ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
                     try {
+                        // 处理IO事件
                         processSelectedKeys();
                     } finally {
                         // Ensure we always run tasks.
                         final long ioTime = System.nanoTime() - ioStartTime;
+                        // 处理完 I/O 事件，再处理异步任务队列
                         ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                     }
                 } else {

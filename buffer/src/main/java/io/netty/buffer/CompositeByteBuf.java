@@ -56,6 +56,7 @@ public class CompositeByteBuf extends AbstractReferenceCountedByteBuf implements
     private final int maxNumComponents;
 
     private int componentCount;
+    // 描述了多少个 components
     private Component[] components; // resized when needed
 
     private boolean freed;

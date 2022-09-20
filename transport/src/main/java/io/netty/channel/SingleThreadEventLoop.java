@@ -59,6 +59,16 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         tailTasks = newTaskQueue(maxPendingTasks);
     }
 
+    /**
+     * 初始化Reactor
+     *
+     * @param parent group
+     * @param executor 启动当前reactor的线程组
+     * @param addTaskWakesUp 向Reactor添加任务时，是否唤醒Selector停止轮询IO就绪事件，马上执行异步任务
+     * @param taskQueue 任务队列
+     * @param tailTaskQueue 尾部队列
+     * @param rejectedExecutionHandler 拒绝策略
+     */
     protected SingleThreadEventLoop(EventLoopGroup parent, Executor executor,
                                     boolean addTaskWakesUp, Queue<Runnable> taskQueue, Queue<Runnable> tailTaskQueue,
                                     RejectedExecutionHandler rejectedExecutionHandler) {
