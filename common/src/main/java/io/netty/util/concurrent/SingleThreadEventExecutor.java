@@ -125,6 +125,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     protected SingleThreadEventExecutor(
             EventExecutorGroup parent, ThreadFactory threadFactory,
             boolean addTaskWakesUp, int maxPendingTasks, RejectedExecutionHandler rejectedHandler) {
+        // 这个地方创建了Reactor的thread, 利用ThreadFactory创建一个thread包装为executor
         this(parent, new ThreadPerTaskExecutor(threadFactory), addTaskWakesUp, maxPendingTasks, rejectedHandler);
     }
 
@@ -156,6 +157,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         super(parent);
         this.addTaskWakesUp = addTaskWakesUp;
         this.maxPendingTasks = Math.max(16, maxPendingTasks);
+        // 包装一下executor
         this.executor = ThreadExecutorMap.apply(executor, this);
         taskQueue = newTaskQueue(this.maxPendingTasks);
         rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
@@ -170,6 +172,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         // Reactor异步任务队列的大小
         this.maxPendingTasks = DEFAULT_MAX_PENDING_EXECUTOR_TASKS;
         // 用于启动Reactor线程的executor -> ThreadPerTaskExecutor
+        // 使用executor创建一个Executor绑定到this
+        // executor也是只会是一个单线程的
         this.executor = ThreadExecutorMap.apply(executor, this);
         // 任务队列
         this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");

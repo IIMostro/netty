@@ -88,6 +88,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
+        // 对于NioServerSocketChannel只需要关注OP_ACCEPT事件，不需要关注读写
         super(null, channel, SelectionKey.OP_ACCEPT);
         // 创建一个tcp配置的类
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());

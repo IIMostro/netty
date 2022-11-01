@@ -230,9 +230,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     /**
+     * 入口
+     *
      * Create a new {@link Channel} and bind it.
      */
     public ChannelFuture bind() {
+        //校验Netty核心组件是否配置齐全
         validate();
         SocketAddress localAddress = this.localAddress;
         if (localAddress == null) {
@@ -275,10 +278,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // 通过启动的时候设置的channel来创建一个channelFactory然后反射创建channel
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
+        // 失败返回
         if (regFuture.cause() != null) {
             return regFuture;
         }
 
+        // 如果初始化和注册完成
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
@@ -321,7 +326,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // 创建出一个NioSocketChannel
             // 执行NioSocketChannel里面的初始化方法
             channel = channelFactory.newChannel();
-            // 初始化
+            // 初始化, 这里面将Acceptor封装成异步任务
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -335,6 +340,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
 
         // 注册channel
+        // 注册serverChannel
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

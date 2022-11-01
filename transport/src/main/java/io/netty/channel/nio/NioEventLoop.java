@@ -154,6 +154,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         // 创建Reactor的selector
         final SelectorTuple selectorTuple = openSelector();
         // 优化之后的selector
+        // 一个NioEventLoop与一个Selector对应 1:1
         this.selector = selectorTuple.selector;
         // jdk默认的selector
         this.unwrappedSelector = selectorTuple.unwrappedSelector;

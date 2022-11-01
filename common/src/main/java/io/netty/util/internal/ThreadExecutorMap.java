@@ -41,6 +41,7 @@ public final class ThreadExecutorMap {
      * Set the current {@link EventExecutor} that is used by the {@link Thread}.
      */
     private static void setCurrentEventExecutor(EventExecutor executor) {
+        // 设置ThreadLocalMap
         mappings.set(executor);
     }
 
@@ -54,6 +55,9 @@ public final class ThreadExecutorMap {
         return new Executor() {
             @Override
             public void execute(final Runnable command) {
+                // 使用总的，也就是传进来的execute执行  eventExecutor执行command
+                // executor.execute会newThread(command).start()
+                // 上面的command就是 当前的NioEventLoop.execute
                 executor.execute(apply(command, eventExecutor));
             }
         };
@@ -69,8 +73,10 @@ public final class ThreadExecutorMap {
         return new Runnable() {
             @Override
             public void run() {
+                // 将当前线程指向eventExecutor
                 setCurrentEventExecutor(eventExecutor);
                 try {
+                    // 任务执行
                     command.run();
                 } finally {
                     setCurrentEventExecutor(null);

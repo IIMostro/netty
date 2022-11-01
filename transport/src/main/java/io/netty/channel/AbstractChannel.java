@@ -70,10 +70,13 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      */
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
-        // channelId
+        // channel全局唯一ID machineId+processId+sequence+timestamp+random
         id = newId();
-        //
+        // 反射获取需要的unsafe
         unsafe = newUnsafe();
+
+        // 为channel分配独立的pipeline用于IO事件编排
+        // 初始化一个双端队列
         pipeline = newChannelPipeline();
     }
 
@@ -470,14 +473,18 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 promise.setFailure(new IllegalStateException("registered to an event loop already"));
                 return;
             }
+            // channel 和 eventloop一致
             if (!isCompatible(eventLoop)) {
                 promise.setFailure(
                         new IllegalStateException("incompatible event loop type: " + eventLoop.getClass().getName()));
                 return;
             }
 
+            // 在channel上设置绑定的Reactor
             AbstractChannel.this.eventLoop = eventLoop;
 
+            // 如果eventLoop是Reactor线程，则直接注册
+            // 否则封装成Future
             if (eventLoop.inEventLoop()) {
                 // 实际的注册
                 register0(promise);

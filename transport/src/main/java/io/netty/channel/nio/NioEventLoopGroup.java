@@ -178,6 +178,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         // 任务队列的工厂
         EventLoopTaskQueueFactory queueFactory = args.length == 4 ? (EventLoopTaskQueueFactory) args[3] : null;
         // 创建 NioEventLoop
+        // 还没有绑定线程
         return new NioEventLoop(this, executor, (SelectorProvider) args[0],
             ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2], queueFactory);
     }
